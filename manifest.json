@@ -1,11 +1,13 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "mark-prettier",
+	"name": "Mark Prettier",
 	"version": "1.0.0",
-	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"minAppVersion": "1.5.0",
+	"description": "Format Markdown files in Obsidian using Prettier.",
+	"author": "zhaiduting",
+	"authorUrl": "https://github.com/zhaiduting",
+	"authorEmail": "zhaiduting@163.com",
+	"fundingUrl": "https://opencollective.com/zhaiduting",
+	"keywords": ["obsidian-plugin", "prettier", "markdown", "format"],
 	"isDesktopOnly": false
 }
