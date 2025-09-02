@@ -5,6 +5,9 @@ on:
         tags:
             - '*'   # 任意 tag push 都触发
 
+permissions:
+    contents: write  # 👈 在这里添加权限
+
 jobs:
     build:
         runs-on: ubuntu-latest
