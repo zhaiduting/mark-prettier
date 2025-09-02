@@ -1,0 +1,86 @@
+name: Build Mark Prettier Plugin
+
+on:
+    push:
+        tags:
+            - '*'   # 任意 tag push 都触发
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            # 1. Checkout 仓库
+            -   name: Checkout repository
+                uses: actions/checkout@v5
+
+            # 2. 设置 Node.js
+            -   name: Setup Node.js
+                uses: actions/setup-node@v3
+                with:
+                    node-version: 24
+
+            # 3. 安装依赖
+            -   name: Install dependencies
+                run: npm ci
+
+            # 4. 获取 tag 并补全版本号
+            -   name: Get version from tag
+                id: get_version
+                run: |
+                    TAG_NAME="${GITHUB_REF#refs/tags/}"
+                    # 去掉开头 v，如果存在
+                    VERSION="${TAG_NAME#v}"
+                    
+                    # 分割成数组
+                    IFS='.' read -ra PARTS <<< "$VERSION"
+                    
+                    # 补全为 x.y.z
+                    if [ ${#PARTS[@]} -eq 1 ]; then
+                      VERSION="${PARTS[0]}.0.0"
+                    elif [ ${#PARTS[@]} -eq 2 ]; then
+                      VERSION="${PARTS[0]}.${PARTS[1]}.0"
+                    fi
+                    
+                    echo "version=$VERSION" >> $GITHUB_ENV
+                    echo "Tag name: $TAG_NAME"
+                    echo "Release version: $VERSION"
+
+            # 5. 更新 manifest.json 的 version
+            -   name: Update manifest.json version
+                run: |
+                    jq --arg ver "${{ env.version }}" '.version = $ver' manifest.json > manifest.tmp.json
+                    mv manifest.tmp.json manifest.json
+                shell: bash
+
+            # 6. 构建插件（生产模式）
+            -   name: Build plugin
+                run: npm run build
+
+            # 7. 上传 artifact（可下载测试）
+            -   name: Upload plugin artifact
+                uses: actions/upload-artifact@v4
+                with:
+                    name: mark-prettier-plugin
+                    path: |
+                        main.js
+                        manifest.json
+                        styles.css
+                        README.md
+
+            # 8. 创建 Release
+            -   name: Create Release
+                uses: softprops/action-gh-release@v1
+                with:
+                    tag_name: ${{ github.ref_name }}
+                    name: Mark Prettier Release ${{ env.version }}
+                    body: "自动打包 Mark Prettier 插件 (v${{ env.version }})"
+                env:
+                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            # 9. 上传 Release 资产
+            -   name: Upload Release Assets
+                uses: softprops/action-gh-release@v1
+                with:
+                    files: main.js,manifest.json,styles.css,README.md
+                env:
+                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
