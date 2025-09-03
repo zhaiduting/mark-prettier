@@ -2,7 +2,7 @@
 	"id": "mark-prettier",
 	"name": "Mark Prettier",
 	"version": "1.0.0",
-	"minAppVersion": "1.9.0",
+	"minAppVersion": "1.7.0",
 	"description": "Format Markdown files with Prettier for clean, consistent notes; use ⌘ + R / Ctrl + R or the file tree context menu.",
 	"author": "zhaiduting",
 	"authorUrl": "https://github.com/zhaiduting",
