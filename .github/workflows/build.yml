@@ -6,7 +6,7 @@ on:
             - '*'   # 任意 tag push 都触发
 
 permissions:
-    contents: write  # 👈 在这里添加权限
+    contents: write  # 发布 Release 需要写权限
 
 jobs:
     build:
@@ -14,30 +14,35 @@ jobs:
         steps:
             # 1. Checkout 仓库
             -   name: Checkout repository
-                uses: actions/checkout@v5
+                uses: actions/checkout@v4
 
-            # 2. 设置 Node.js
+            # 2. 设置 Node.js (使用 LTS)
             -   name: Setup Node.js
-                uses: actions/setup-node@v3
+                uses: actions/setup-node@v4
                 with:
-                    node-version: 24
+                    node-version: lts/*
 
-            # 3. 安装依赖
+            # 3. 缓存依赖（加快构建）
+            -   name: Cache Node.js modules
+                uses: actions/cache@v3
+                with:
+                    path: ~/.npm
+                    key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+                    restore-keys: |
+                        ${{ runner.os }}-node-
+
+            # 4. 安装依赖
             -   name: Install dependencies
                 run: npm ci
 
-            # 4. 获取 tag 并补全版本号
+            # 5. 获取 tag 并补全版本号
             -   name: Get version from tag
                 id: get_version
                 run: |
                     TAG_NAME="${GITHUB_REF#refs/tags/}"
-                    # 去掉开头 v，如果存在
                     VERSION="${TAG_NAME#v}"
                     
-                    # 分割成数组
                     IFS='.' read -ra PARTS <<< "$VERSION"
-                    
-                    # 补全为 x.y.z
                     if [ ${#PARTS[@]} -eq 1 ]; then
                       VERSION="${PARTS[0]}.0.0"
                     elif [ ${#PARTS[@]} -eq 2 ]; then
@@ -45,40 +50,44 @@ jobs:
                     fi
                     
                     echo "version=$VERSION" >> $GITHUB_ENV
-                    echo "Tag name: $TAG_NAME"
                     echo "Release version: $VERSION"
 
-            # 5. 更新 manifest.json 的 version
+            # 6. 更新 manifest.json 的 version
             -   name: Update manifest.json version
                 run: |
                     jq --arg ver "${{ env.version }}" '.version = $ver' manifest.json > manifest.tmp.json
                     mv manifest.tmp.json manifest.json
                 shell: bash
 
-            # 6. 构建插件（生产模式）
+            # （可选）7. 同步更新 package.json 版本号
+            -   name: Update package.json version
+                run: |
+                    jq --arg ver "${{ env.version }}" '.version = $ver' package.json > package.tmp.json
+                    mv package.tmp.json package.json
+                shell: bash
+
+            # 8. 构建插件（生产模式）
             -   name: Build plugin
                 run: npm run build
 
-            # 7. 打包插件文件为 ZIP
+            # 9. 打包插件文件为 ZIP（固定文件名）
             -   name: Package plugin as zip
                 run: |
-                    # 确保目录和文件存在
                     mkdir -p release
-                    zip -r release/Mark-Prettier-Plugin-${{ env.version }}.zip main.js manifest.json styles.css README.md
+                    zip -r release/mark-prettier.zip main.js manifest.json styles.css
                 shell: bash
 
-            # 8. 创建 Release 并上传 ZIP 资产
+            # 10. 创建 Release 并上传 ZIP 和 manifest.json
             -   name: Create Release and Upload Assets
                 uses: softprops/action-gh-release@v1
                 with:
                     tag_name: ${{ github.ref_name }}
                     name: Mark Prettier Release ${{ env.version }}
-                    body: "自动打包 Mark Prettier 插件 (v${{ env.version }})"
+                    generate_release_notes: true
                     draft: false
                     prerelease: false
-                    # 注意这里只上传 ZIP 文件
                     files: |
-                        release/Mark-Prettier-Plugin-${{ env.version }}.zip
+                        release/mark-prettier.zip
+                        manifest.json
                 env:
                     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
