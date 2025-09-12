@@ -24,3 +24,6 @@ data.json
 # 环境变量及密码
 .env.local
 .secrets
+
+# Mock event files for act
+mock/
