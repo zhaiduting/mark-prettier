@@ -6,6 +6,7 @@ import * as estree from 'prettier/plugins/estree';
 import * as babel from 'prettier/plugins/babel';
 import {FileStateManager} from './FileStateManager';
 import {EditorStateManager} from './EditorStateManager';
+import toml from 'prettier-plugin-toml';
 
 export async function prettify(fileStateManager: FileStateManager, editorStateManager: EditorStateManager): Promise<void> {
 	const state = fileStateManager.get();
@@ -16,6 +17,7 @@ export async function prettify(fileStateManager: FileStateManager, editorStateMa
 			html,
 			postcss,
 			estree, babel,
+			toml
 		],
 		cursorOffset: editorStateManager.get().cursorOffset,
 	} as prettier.CursorOptions);
