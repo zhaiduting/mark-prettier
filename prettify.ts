@@ -8,6 +8,7 @@ import {FileStateManager} from './FileStateManager';
 import {EditorStateManager} from './EditorStateManager';
 import toml from 'prettier-plugin-toml';
 import * as nginx from 'prettier-plugin-nginx'
+import php from '@prettier/plugin-php'
 // @ts-ignore
 import java from 'prettier-plugin-java'
 
@@ -23,6 +24,7 @@ export async function prettify(fileStateManager: FileStateManager, editorStateMa
 			toml,
 			java,
 			nginx,
+			php
 		],
 		cursorOffset: editorStateManager.get().cursorOffset,
 	} as prettier.CursorOptions);
